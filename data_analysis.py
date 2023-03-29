@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt # for plotting figures and setting their propert
 import pandas as pd # handling data structures (loaded from files)
 from scipy.stats import linregress # contains linregress (for linear regression)
 from scipy.optimize import curve_fit as cfit # non-linear curve fitting
-from sklearn.metrics import r2_score # import function that calculates R^2 score
+#from sklearn.metrics import r2_score # import function that calculates R^2 score
 
 #%% potential
 
@@ -36,6 +36,7 @@ for i in range(1,10):
    plt.contour(coord_x, coord_y, V_xy, np.sort([-i , 0 , i]), cmap='hot')
 
 # plt.plot(x,V_x,'.', label=”calculated potential”)
+plt.show()
 
 #%% capacitor
 
@@ -54,13 +55,14 @@ tau_theoretical = R_tot*C_theoretical
 
 # tau_theoretical = 4.325983415581319e-12
 
-C_data = pd.read_csv('capacitor.csv')
+C_data = pd.read_csv('Data/capacitor.csv')
 C_data = C_data.rename(columns = {"time (sec)":"t", "ch2":"V_R"})
 C_data["V_C"] = C_data["ch1"] - C_data["V_R"]
 t = np.array(C_data['t'].values)
 V_C = np.array(C_data['V_C'].values)
 
 plt.plot(t,V_C,label="V_C as a function of time")
+plt.show()
 
 
 # 8. curve fitting: a tool for creating the closest graph created by the data we're putting.
@@ -72,8 +74,4 @@ def V_decay(t,tau,V0):
 p_optimal, p_covariance = cfit(V_decay,C_data['t'], C_data["V_C"]) # non linear curve fitting
 
 plt.plot(p_covariance,p_optimal)
-
-
-
-
-
+plt.show()
