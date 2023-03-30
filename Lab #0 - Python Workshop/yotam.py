@@ -32,7 +32,10 @@ print("\nOhm's Law Section...")
 R1 = 5.48 #[Ohm]
 
 ## (7-9)
-R_data = pd.read_csv('Data/ohm.csv', header=1, usecols=['Time (s)', '1 (VOLT)', '2 (VOLT)']) # TO DO: explain header
+R_data = pd.read_csv('Data/ohm.csv', header=1, usecols=['Time (s)', '1 (VOLT)', '2 (VOLT)'])
+## (8): The 'header' parameter determines which row in the .csv file to use as the names for the columns
+# in the dataframe - here we choose the second row to be the column names (since the first row doesn't provide
+# helpful names for this case), thus we set 'header=1'
 
 ## (10)
 R_data.rename(columns = {'Time (s)':'t', '1 (VOLT)':'V1', '2 (VOLT)':'V2'}, inplace = True)
@@ -194,12 +197,16 @@ plt.title("Magnetic Flux vs. Time")
 plt.grid()
 
 plt.figure(3)
-## (12)
+## (12) The x-axis is t_coil and the y-axis is h_over_t_coil, this allows us to use a linear regression, 
+# since we expect h_over_t_coil = (a/2)*t_coil + v_0
 plt.plot(t_coil, h_over_t_coil, 'bo', label='measurements')
+
 ## (13)
 plt.errorbar(t_coil, h_over_t_coil, xerr=t_coil_err, yerr=h_over_t_coil_err, fmt='none', color='orange', label='errors')
+
 ## (15)
 plt.plot(t_coil, h_over_t_coil_pred, 'green', label='regression')
+
 plt.legend(loc='center right')
 plt.xlabel("Time [sec]")
 plt.ylabel("Height / Time [m/s]")
@@ -207,3 +214,15 @@ plt.title("Height / Time vs. Time")
 plt.grid()
 
 plt.show()
+
+#%% Useful & Less Useful Functions
+
+## Useful Functions:
+# Energy()
+# flux()
+
+## Less Useful Functions:
+# I_R()
+# V_R()
+# R_t()
+# P_t()
