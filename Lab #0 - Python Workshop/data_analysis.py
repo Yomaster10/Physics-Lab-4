@@ -35,7 +35,8 @@ plt.colorbar()
 for i in range(1,10):
    plt.contour(coord_x, coord_y, V_xy, np.sort([-i , 0 , i]), cmap='hot')
 
-# plt.plot(x,V_x,'.', label=”calculated potential”)
+#plt.plot(x,V_x,'.', label=”calculated potential”)
+plt.show()
 
 #%% capacitor
 
@@ -70,7 +71,7 @@ new_labels = [f'{i:0.2f}' for float(i) in labels]
 print(new_labels)
 """
 plt.plot(t,V_C,label="measured V_C as a function of time")
-
+plt.show()
 
 # 8. curve fitting: a tool for creating the closest graph created by the data we're putting.
 # This graph can indicate the type of the relation between the two variables.
@@ -95,6 +96,7 @@ tau_fit = parameters[0]
 
 plt.plot(t, V_decay(t,parameters[0],parameters[1]),label='fitted curve')
 plt.legend()
+plt.show()
 
 # 12. p_covarience will give us the errors with:
     
@@ -111,6 +113,7 @@ plt.grid()
 
 inds = (C_data['t'] > 0) & (C_data['t'] < 0.00004)
 plt.plot(C_data['t'][inds], np.log(C_data["V_C"][inds]),'.', label='data')
+plt.show()
 
 # 20. linear regression is 
 print(covariance)
@@ -149,7 +152,9 @@ print('1',reg.stderr,reg.intercept_stderr)
  
 # reg r2
 
-r2_reg=r2_score(reg,np.log(C_data["V_C"][inds])) 
+y_pred = reg.slope*C_data['t'][inds] + reg.intercept
+
+r2_reg=r2_score(y_pred,np.log(C_data["V_C"][inds])) 
 
 # final
 
@@ -163,5 +168,6 @@ plt.xlabel("integral of V_R")
 plt.ylabel("$\Delta V_C$")
 plt.legend()
 plt.grid()
+plt.show()
 
 # limits of x

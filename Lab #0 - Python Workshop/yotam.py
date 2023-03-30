@@ -218,11 +218,27 @@ plt.show()
 #%% Useful & Less Useful Functions
 
 ## Useful Functions:
-# Energy()
-# flux()
+# np.linspace()
+# np.meshgrid()
+# pd.read_csv()
+# cfit()
+# abs()
+# sum()
+# r2_score()
+# linregress()
+# np.log()
+# np.exp()
+# np.sqrt()
+# np.pow()
 
 ## Less Useful Functions:
 # I_R()
 # V_R()
 # R_t()
 # P_t()
+
+#%% Bonus
+
+print("\nBonus Section...")
+for i in [scipy.constants.e, scipy.constants.mu_0, scipy.constants.epsilon_0, scipy.constants.m_e]:
+    print(i)
