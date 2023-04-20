@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+V_a_err = 0.010 #[V]
+def I_err_calc(I):
+    return np.dot(0.004,I) + 0.4 #[pA]
+
 def Get_Peaks(I_heater, V_acc, peak_V_lims):
     i = 0; peaks = []; start_idx = None
     while i < len(peak_V_lims)-1:
@@ -18,13 +22,19 @@ def Get_Peaks(I_heater, V_acc, peak_V_lims):
         i += 1
     return peaks
 
-def Get_ExcVoltage_and_ContactVoltage(I_heater, V_acc, peak_V_lims, f):
-    peak_indices = Get_Peaks(I_heater, V_acc, peak_V_lims)
-    I_maxima = [I_heater[p] for p in peak_indices]
+def Get_ExcVoltage_and_ContactVoltage(I, V_acc, peak_V_lims, f, add_label=False):
+    peak_indices = Get_Peaks(I, V_acc, peak_V_lims)
+    I_maxima = [I[p] for p in peak_indices]
     V_maxima = [V_acc[p] for p in peak_indices]
     
     plt.figure(f)
-    plt.plot(V_maxima, I_maxima, 'bo')
+    I_err = I_err_calc(I_maxima)
+    if add_label:
+        plt.plot(V_maxima, I_maxima, 'bo', label='current peaks')
+        plt.errorbar(V_maxima, I_maxima, xerr=V_a_err, yerr=I_err, fmt='none', color='orange', label='errors')
+    else:
+        plt.plot(V_maxima, I_maxima, 'bo')
+        plt.errorbar(V_maxima, I_maxima, xerr=V_a_err, yerr=I_err, fmt='none', color='orange')
 
     del_V_vec = []; V_contact_vec = []
     for i in range(len(V_maxima)-1):
@@ -43,6 +53,7 @@ print("\nPart 1.1: I-V Curve with Variable Braking Voltage...")
 Heater_Current = 0.330 #[A]
 peak_V_lims = [5,8,13,18]
 outliers = {1.3:[125], 1.4:[507], 1.6:[114,161,402], 1.7:[0], 1.8:[33,34,35,314,470]}
+
 V_e_vec = []; V_c_vec = []; V_r_vec = []
 for i in range(1,9):
     Braking_Voltage = round(1 + 0.1*i, 2)
@@ -58,49 +69,27 @@ for i in range(1,9):
     I1 = np.array(fh1['Ia(E-12 A)_1']) # current array
     T1 = np.array(fh1['T(c)_1']) # temperature array
 
-    V_excitation, V_contact = Get_ExcVoltage_and_ContactVoltage(I1, Va1, peak_V_lims, 0)
+    add_label = False
+    if i == 8:
+        add_label = True
+
+    V_excitation, V_contact = Get_ExcVoltage_and_ContactVoltage(I1, Va1, peak_V_lims, 0, add_label=add_label)
     V_e_vec.append(V_excitation)
     V_c_vec.append(V_contact)
 
     plt.figure(0)
     plt.plot(Va1, I1, label='V_r: {:.1f}[V]'.format(Braking_Voltage))
-
-    plt.figure(1)
-    plt.plot(T1, Va1, label='V_r: {:.1f}[V]'.format(Braking_Voltage))
-
-    plt.figure(2)
-    plt.plot(T1, I1, label='V_r: {:.1f}[V]'.format(Braking_Voltage))
     
-V_e_avg = np.mean(V_e_vec)
-V_c_avg = np.mean(V_c_vec)
-print(f"\tAvg. Excitation Energy: {V_e_avg:0.2f}[eV], Avg. Contact Voltage: {V_c_avg:0.2f}[V]")
+V_e_avg_1 = np.mean(V_e_vec)
+V_c_avg_1 = np.mean(V_c_vec)
+print(f"\tAvg. Excitation Energy: {V_e_avg_1:0.3f}[eV], Avg. Contact Voltage: {V_c_avg_1:0.3f}[V]")
 
 plt.figure(0)
 plt.xlabel('Acceleration Voltage [V]')
 plt.ylabel('Current [pA]')
-plt.title('Part 1.1: Current vs. Acceleration Voltage (FH Curve) - I_h={:.2f}[A]'.format(Heater_Current))
+#plt.title('Part 1.1: Current vs. Acceleration Voltage (FH Curve) - I_h={:.2f}[A]'.format(Heater_Current))
 plt.grid()
 plt.legend()
-#plt.show()
-
-#%% Part 1.1.1 (Bonus): Effect of Temperature on the I-V Curve with variable braking voltage (V_r)
-
-print("\nPart 1.1.1 (Bonus): Effect of Temperature on the I-V Curve with Variable Braking Voltage...")
-
-plt.figure(1)
-plt.xlabel('Temperature [K]')
-plt.ylabel('Acceleration Voltage [V]')
-plt.title('Part 1.1.1: Acceleration Voltage vs. Temperature - I_h={:.2f}[A]'.format(Heater_Current))
-plt.grid()
-plt.legend()
-
-plt.figure(2)
-plt.xlabel('Temperature [K]')
-plt.ylabel('Current [pA]')
-plt.title('Part 1.1.1: Current vs. Temperature - I_h={:.2f}[A]'.format(Heater_Current))
-plt.grid()
-plt.legend()
-
 plt.show()
 
 #%% Part 1.2: I-V Curve with variable heater current (I_h)
@@ -129,49 +118,26 @@ for i in range(5):
     I2 = np.array(fh2['Ia(E-12 A)_1']) # current array
     T2 = np.array(fh2['T(c)_1']) # temperature array
 
-    V_excitation, V_contact = Get_ExcVoltage_and_ContactVoltage(I2, Va2, peak_V_lims, 3)
+    add_label = False
+    if i == 4:
+        add_label = True
+    V_excitation, V_contact = Get_ExcVoltage_and_ContactVoltage(I2, Va2, peak_V_lims, 3, add_label = add_label)
     V_e_vec.append(V_excitation)
     V_c_vec.append(V_contact)
 
     plt.figure(3)
     plt.plot(Va2, I2, label='V_h: {:.1f}[V], I_h: {:.2f}[A]'.format(Heater_Voltage, Heater_Currents[i]))
-
-    plt.figure(4)
-    plt.plot(T2, Va2, label='V_h: {:.1f}[V], I_h: {:.2f}[A]'.format(Heater_Voltage, Heater_Currents[i]))
-
-    plt.figure(5)
-    plt.plot(T2, I2, label='V_h: {:.1f}[V], I_h: {:.2f}[A]'.format(Heater_Voltage, Heater_Currents[i]))
     
-V_e_avg = np.mean(V_e_vec)
-V_c_avg = np.mean(V_c_vec)
-print(f"\tAvg. Excitation Energy: {V_e_avg:0.2f}[eV], Avg. Contact Voltage: {V_c_avg:0.2f}[V]")
+V_e_avg_2 = np.mean(V_e_vec)
+V_c_avg_2 = np.mean(V_c_vec)
+print(f"\tAvg. Excitation Energy: {V_e_avg_2:0.3f}[eV], Avg. Contact Voltage: {V_c_avg_2:0.3f}[V]")
 
 plt.figure(3)
 plt.xlabel('Acceleration Voltage [V]')
 plt.ylabel('Current [pA]')
-plt.title('Part 1.2: Current vs. Acceleration Voltage (FH Curve) - V_r={:.1f}[V]'.format(Braking_Voltage))
+#plt.title('Part 1.2: Current vs. Acceleration Voltage (FH Curve) - V_r={:.1f}[V]'.format(Braking_Voltage))
 plt.grid()
 plt.legend()
-#plt.show()
-
-#%% Part 1.2.1 (Bonus): Effect of Temperature on the I-V Curve with variable heater current (I_h)
-
-print("\nPart 1.2.1 (Bonus): Effect of Temperature on the I-V Curve with Variable Heater Current...")
-
-plt.figure(4)
-plt.xlabel('Temperature [K]')
-plt.ylabel('Acceleration Voltage [V]')
-plt.title('Part 1.2.1: Acceleration Voltage vs. Temperature - V_r={:.1f}[V]'.format(Braking_Voltage))
-plt.grid()
-plt.legend()
-
-plt.figure(5)
-plt.xlabel('Temperature [K]')
-plt.ylabel('Current [pA]')
-plt.title('Part 1.2.1: Current vs. Temperature - V_r={:.1f}[V]'.format(Braking_Voltage))
-plt.grid()
-plt.legend()
-
 plt.show()
 
 #%% Part 2.1: Ionization Energy of Mercury Atoms
@@ -186,11 +152,26 @@ T3 = np.array(fh3['T(c)_1']) #temperature array
 Braking_Voltage = 1.2 #[V]
 Heater_Voltage = 5.4 #[V]
 
+nonzero = []
+for i in range(len(I3)):
+    if I3[i] > 0.5: #cutoff
+        nonzero.append(Va3[i])
+V_a_star = min(nonzero)
+I_a_star = I3[list(Va3).index(V_a_star)]
+V_ion = V_a_star-V_c_avg_1
+
+print(f"\tIonization Voltage: {V_ion:0.3f}[V]")
+
 plt.figure(6)
-plt.plot(Va3, I3)#, label='V_h: {:.1f}[V]'.format(Heater_Voltage))
+plt.plot(Va3, I3, 'r', label='data')
+plt.plot(V_a_star, I_a_star, 'bo', label='ionization point')
+
+I_err = I_err_calc(I_a_star)
+plt.errorbar(V_a_star, I_a_star, xerr=V_a_err, yerr=I_err, fmt='none', color='orange', label='error')
+
 plt.xlabel('Acceleration Voltage [V]')
 plt.ylabel('Current [pA]')
-plt.title('Part 2.1: Current vs. Acceleration Voltage (FH Curve) - V_r={:.1f}[V]'.format(Braking_Voltage))
+#plt.title('Part 2.1: Current vs. Acceleration Voltage (FH Curve) - V_r={:.1f}[V]'.format(Braking_Voltage))
 plt.grid()
-#plt.legend()
+plt.legend()
 plt.show()
