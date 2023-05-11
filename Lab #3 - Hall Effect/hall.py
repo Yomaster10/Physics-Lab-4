@@ -8,20 +8,97 @@ from scipy.stats import linregress
 #%% Part 0: Measure I-V (current-voltage) characteristic of the sample
 print("\nPart 0: Measure I-V (current-voltage) characteristic of the sample....")
 
+def deming_regression(x, y, x_err, y_err, m=None):
+    """
+    Perform Deming regression of y on x. Credit: ChatGPT
+
+    Parameters
+    ----------
+    x : array_like
+        Independent variable.
+    y : array_like
+        Dependent variable.
+    x_err : array_like
+        Measurement errors on x.
+    y_err : array_like
+        Measurement errors on y.
+    m : float, optional
+        Known value of the slope of the true regression line.
+
+    Returns
+    -------
+    slope : float
+        Slope of the estimated regression line.
+    slope_err : float
+        Error on the slope estimate.
+    intercept : float
+        Intercept of the estimated regression line.
+    r_squared : float
+        R-squared value of the fit.
+    """
+
+    if m is None:
+        m = np.cov(x, y)[0, 1] / np.var(x)
+
+    x_err = np.array([x_err]*len(x))
+    y_err = np.array([y_err]*len(y))
+
+    # Compute the means of x and y
+    x_mean = np.average(x, weights=1/x_err**2)
+    y_mean = np.average(y, weights=1/y_err**2)
+
+    # Compute the variances of x and y
+    x_var = np.average((x - x_mean)**2, weights=1/x_err**2)
+    y_var = np.average((y - y_mean)**2, weights=1/y_err**2)
+
+    # Compute the covariance between x and y
+    xy_cov = np.average((x - x_mean) * (y - y_mean), weights=1/(x_err * y_err))
+
+    # Compute the total variance of the errors
+    sigma_sq = (y_var - m**2 * x_var + 2 * m * xy_cov) / (1 + m**2)
+
+    # Compute the estimated slope and intercept of the regression line
+    slope = np.sqrt(y_var / x_var) * np.sign(m)
+    slope_err = np.sqrt(sigma_sq / x_var)
+    intercept = y_mean - slope * x_mean
+
+    # Compute the R-squared value of the fit
+    y_pred = slope * x + intercept
+    ss_tot = np.sum(((y - y_mean) / y_err)**2)
+    ss_res = np.sum(((y - y_pred) / y_err)**2)
+    r_squared = 1 - ss_res / ss_tot
+
+    return slope, slope_err, intercept, r_squared
+
 part0data = pd.read_excel('Data/HallData.xlsx', sheet_name='Part 0')
-I_p = pd.to_numeric(part0data['I_p [mA]']) #[mA]
+I_p = pd.to_numeric(part0data['I_p [mA]'])*10**-3 #[A]
 U_p = pd.to_numeric(part0data['U_p [V]']) #[V]
 
-res = linregress(I_p, U_p) # use linear regression
-R_0 = res.slope*10**3 #[Ω]
-print("\tThe resistance of the semiconductor is {:.3f}[Ω]".format(R_0) ) # print the results of the regression
+#res = linregress(I_p, U_p) # use linear regression
+#R_0 = res.slope #[Ω]
+#print("\tThe resistance of the semiconductor is {:.3f}[Ω]".format(R_0) ) # print the results of the regression
 
-R_squared = res.rvalue**2
-U_p_pred = res.slope*I_p + res.intercept
+#R_squared = res.rvalue**2
+#U_p_pred = res.slope*I_p + res.intercept
+#print(res.slope, res.stderr, res.intercept)
+
+Ip_err = 5e-4 #[A]
+Up_err = 5e-5 #[V]
+#Ip_err = np.array([5e-4]*len(I_p)) #[A]
+#Up_err = np.array([5e-5]*len(U_p)) #[V]
+R_0, R_0_err, intercept, r_squared = deming_regression(I_p, U_p, Ip_err, Up_err)
+
+#print(R_0_err)
+
+print("\tThe resistance of the semiconductor is {:.3f}[Ω]".format(R_0))
+print(R_0, R_0_err, intercept, r_squared)
+#R_squared2 = res.rvalue**2
+U_p_pred2 = R_0*I_p + intercept
 
 plt.figure(0)
-plt.plot(I_p, U_p, label='Data')
-plt.plot(I_p, U_p_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
+plt.plot(I_p*10**3, U_p, label='Data')
+#plt.plot(I_p*10**3, U_p_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
+plt.plot(I_p*10**3, U_p_pred2, label=f'Deming Regression, $R^2$={r_squared:.3f}', linestyle = '--')
 plt.xlabel("$I_p$ [mA]")
 plt.ylabel("$U_p$ [V]")
 plt.title("Initial I-V Curve")
