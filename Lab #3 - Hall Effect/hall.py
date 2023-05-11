@@ -5,10 +5,8 @@ import matplotlib.pyplot as plt
 import scipy.constants
 from scipy.stats import linregress
 
-#%% Part 0: Measure I-V (current-voltage) characteristic of the sample
-print("\nPart 0: Measure I-V (current-voltage) characteristic of the sample....")
-
-def deming_regression(x, y, x_err, y_err, m=None):
+## Functions
+def deming_regression(x, y, X_err, Y_err, m=None):
     """
     Perform Deming regression of y on x. Credit: ChatGPT
 
@@ -40,9 +38,11 @@ def deming_regression(x, y, x_err, y_err, m=None):
     if m is None:
         m = np.cov(x, y)[0, 1] / np.var(x)
 
-    x_err = np.array([x_err]*len(x))
-    y_err = np.array([y_err]*len(y))
-
+    x_err = np.array([X_err]*len(x))
+    y_err = np.array([Y_err]*len(y))
+    #x_err = np.array([X_err for _ in range(len(x))])
+    #y_err = np.array([Y_err for _ in range(len(y))])
+    
     # Compute the means of x and y
     x_mean = np.average(x, weights=1/x_err**2)
     y_mean = np.average(y, weights=1/y_err**2)
@@ -50,6 +50,7 @@ def deming_regression(x, y, x_err, y_err, m=None):
     # Compute the variances of x and y
     x_var = np.average((x - x_mean)**2, weights=1/x_err**2)
     y_var = np.average((y - y_mean)**2, weights=1/y_err**2)
+    #print(x_var, y_var)
 
     # Compute the covariance between x and y
     xy_cov = np.average((x - x_mean) * (y - y_mean), weights=1/(x_err * y_err))
@@ -68,37 +69,61 @@ def deming_regression(x, y, x_err, y_err, m=None):
     ss_res = np.sum(((y - y_pred) / y_err)**2)
     r_squared = 1 - ss_res / ss_tot
 
-    return slope, slope_err, intercept, r_squared
+    return slope, slope_err, y_pred, r_squared
+
+def deming_regression2(x, y, err_x, err_y):
+    # Calculate the covariance matrix of x and y
+    cov = np.cov(x, y)
+
+    # Calculate the variance of the errors of x and y
+    var_err_x = err_x**2
+    var_err_y = err_y**2
+
+    # Calculate the slope of the regression line
+    slope = (cov[0, 1] * (np.sqrt(var_err_y) / np.sqrt(var_err_x))) / (cov[0, 0] + cov[1, 1] * (var_err_y / var_err_x))
+
+    # Calculate the intercept of the regression line
+    intercept = np.mean(y) - slope * np.mean(x)
+
+    # Calculate the error of the slope estimate
+    error_slope = np.sqrt(var_err_y / (cov[0, 0] * var_err_x + cov[1, 1] * var_err_y - 2 * cov[0, 1] * np.sqrt(var_err_x * var_err_y)))
+
+    # Calculate the predicted y values
+    y_pred = slope * x + intercept
+
+    # Calculate the residual sum of squares and total sum of squares
+    RSS = np.sum((y - y_pred)**2)
+    TSS = np.sum((y - np.mean(y))**2)
+
+    # Calculate the R-squared value
+    r_squared = 1 - (RSS / TSS)
+
+    return slope, error_slope, y_pred, r_squared
+
+def ProductQuotient_Error(F, x, y, x_err, y_err):
+    F_err = F * np.sqrt((x_err / x)**2 + (y_err / y)**2)
+    return F_err
+
+#%% Part 0: Measure I-V (current-voltage) characteristic of the sample
+print("\nPart 0: Measure I-V (current-voltage) characteristic of the sample....")
 
 part0data = pd.read_excel('Data/HallData.xlsx', sheet_name='Part 0')
 I_p = pd.to_numeric(part0data['I_p [mA]'])*10**-3 #[A]
 U_p = pd.to_numeric(part0data['U_p [V]']) #[V]
 
-#res = linregress(I_p, U_p) # use linear regression
-#R_0 = res.slope #[Ω]
-#print("\tThe resistance of the semiconductor is {:.3f}[Ω]".format(R_0) ) # print the results of the regression
+I_err = 5e-4 #[A]
+U_err = 5e-5 #[V]
 
-#R_squared = res.rvalue**2
-#U_p_pred = res.slope*I_p + res.intercept
-#print(res.slope, res.stderr, res.intercept)
-
-Ip_err = 5e-4 #[A]
-Up_err = 5e-5 #[V]
-#Ip_err = np.array([5e-4]*len(I_p)) #[A]
-#Up_err = np.array([5e-5]*len(U_p)) #[V]
-R_0, R_0_err, intercept, r_squared = deming_regression(I_p, U_p, Ip_err, Up_err)
-
-#print(R_0_err)
-
-print("\tThe resistance of the semiconductor is {:.3f}[Ω]".format(R_0))
-print(R_0, R_0_err, intercept, r_squared)
-#R_squared2 = res.rvalue**2
-U_p_pred2 = R_0*I_p + intercept
+res = linregress(I_p, U_p)
+R_0 = res.slope #[Ω]
+R_0_error = res.stderr #[Ω]
+R_squared = res.rvalue**2
+U_p_pred = R_0 *I_p + res.intercept
+print("\tThe resistance of the semiconductor is {:.3f}±{:.3f}[Ω]".format(R_0, R_0_error))
 
 plt.figure(0)
 plt.plot(I_p*10**3, U_p, label='Data')
-#plt.plot(I_p*10**3, U_p_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
-plt.plot(I_p*10**3, U_p_pred2, label=f'Deming Regression, $R^2$={r_squared:.3f}', linestyle = '--')
+plt.plot(I_p*10**3, U_p_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
 plt.xlabel("$I_p$ [mA]")
 plt.ylabel("$U_p$ [V]")
 plt.title("Initial I-V Curve")
@@ -113,39 +138,46 @@ B = -251*10**-3 #[T]
 d = 1.00*10**-3 #[m]
 
 part1data = pd.read_excel('Data/HallData.xlsx', sheet_name='Part 1')
-I_p = pd.to_numeric(part1data['I_p [mA]'][:11]) #[mA]
-U_H = pd.to_numeric(part1data['U_H [mV]'][:11]) #[mV]
+I_p = pd.to_numeric(part1data['I_p [mA]'][:11])*10**-3 #[A]
+U_H = pd.to_numeric(part1data['U_H [mV]'][:11])*10**-3 #[V]
 
-res = linregress(I_p, U_H) # use linear regression
-R = res.slope #[Ω]
-R_H = (d*R)/B #[Ω·m/T]=[m^3/C]
-print("\tThe Hall coefficient of the semiconductor is {:.3f}[cm^3/C]".format(R_H*10**6))
-
+res = linregress(I_p, U_H)
+X = res.slope #[Ω]
+X_error = res.stderr #[Ω]
 R_squared = res.rvalue**2
-U_H_pred = res.slope*I_p + res.intercept
+U_H_pred = X*I_p + res.intercept #[V]
+
+R_H = (d*X)/B #[Ω·m/T]=[m^3/C]
+B_error = 1e-3 #[T]
+R_H_error = ProductQuotient_Error(R_H, X, B, X_error, B_error) #[m^3/C]
+print("\tThe Hall coefficient of the semiconductor is {:.3f}±{:.3f}[cm^3/C]".format(R_H*10**6, R_H_error*10**6))
 
 if np.sign(R_H) > 0:
     print("\tHoles are the dominant charge carriers!")
 else:
     print("\tElectrons are the dominant charge carriers!")
-# R_H = 1/nq
 # Since the density n must be positive, and we got R_H > 0, we see that q > 0 --> holes are dominant!
 
 q = scipy.constants.e #[C]
 n = 1 / (R_H*q) #[m^-3]
-print("\tThe density of the majority charge carriers is {:.3f}e21[m^-3]".format(n*10**-21))
+n_error = ProductQuotient_Error(n, R_H, 1, R_H_error, 0) #[m^-3]
+print("\tThe density of the majority charge carriers is {:.3f}e21±{:.3f}e21[m^-3]".format(n*10**-21, n_error*10**-21))
 
 # mobility of the majority charge carriers using:
 W = 10*10**-3 #[m]
 L = 16*10**-3 #[m]
 
 rho_0 = R_0 * d * W / L #[Ω·m]
+rho_error = R_0_error * d * W / L #[Ω·m]
+
 mu = abs(R_H) / rho_0 #[1/T]=[m^2/V·s]
-print("\tThe resistivity is {:.3f}[Ω·cm], and the mobility of the majority charge carriers is {:.3f}[cm^2/V·s]".format(rho_0*10**2, mu*10**4))
+mu_error = ProductQuotient_Error(mu, R_H, rho_0, R_H_error, rho_error) #[m^2/V·s]
+
+print("\tThe resistivity is {:.3f}±{:.3f}[Ω·cm], and the mobility of the majority charge carriers is {:.3f}±{:.3f}[cm^2/V·s]".format(rho_0*10**2, rho_error*10**2, mu*10**4, mu_error*10**4))
 
 plt.figure(1)
-plt.plot(I_p, U_H, label='Data')
-plt.plot(I_p, U_H_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
+plt.plot(I_p*10**3, U_H*10**3, label='Data')
+plt.plot(I_p*10**3, U_H_pred*10**3, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
 plt.xlabel("$I_p$ [mA]")
 plt.ylabel("$U_H$ [mV]")
 plt.title("Hall Voltage vs. Control Current")
@@ -158,26 +190,32 @@ print("\nPart 2: Measure Hall voltage vs. magnetic field...")
 I = -30*10**-3 #[A]
 
 part2data = pd.read_excel('Data/HallData.xlsx', sheet_name='Part 2')
-B = pd.to_numeric(part2data['B [mT]'][:32]) #[mT]
-U_H = pd.to_numeric(part2data['U_H [mV]'][:32]) #[mV]
+B = pd.to_numeric(part2data['B [mT]'][:32])*10**-3 #[T]
+U_H = pd.to_numeric(part2data['U_H [mV]'][:32])*10**-3 #[V]
 
 res = linregress(B, U_H) # use linear regression
 X = res.slope #[V/T]
-R_H = (d*X)/I #[V·m/T·A]=[m^3/C]
-print("\tThe Hall coefficient of the semiconductor is {:.3f}[cm^3/C]".format(R_H*10**6))
-
+X_error = res.stderr #[V/T]
+print(X, X_error)
 R_squared = res.rvalue**2
-U_H_pred = res.slope*B + res.intercept
+U_H_pred = X*B + res.intercept #[V]
+
+R_H = (d*X)/I #[V·m/T·A]=[m^3/C]
+R_H_error = ProductQuotient_Error(R_H, X, I, X_error, I_err) #[m^3/C]
+
+print("\tThe Hall coefficient of the semiconductor is {:.3f}±{:.3f}[cm^3/C]".format(R_H*10**6, R_H_error*10**6))
 
 n = 1 / (R_H*q) #[m^-3]
-print("\tThe density of the majority charge carriers is {:.3f}e20[m^-3]".format(n*10**-20))
+n_error = ProductQuotient_Error(n, R_H, 1, R_H_error, 0) #[m^-3]
+print("\tThe density of the majority charge carriers is {:.3f}e20±{:.3f}e20[m^-3]".format(n*10**-20, n_error*10**-20))
 
-mu = abs(R_H) / rho_0 #[1/T]=[m^2/V·s]
-print("\tThe mobility of the majority charge carriers is {:.3f}[cm^2/V·s]".format(mu*10**4))
+mu = abs(R_H) / rho_0 #[m^2/V·s]
+mu_error = ProductQuotient_Error(mu, R_H, rho_0, R_H_error, rho_error) #[m^2/V·s]
+print("\tThe mobility of the majority charge carriers is {:.3f}±{:.3f}[cm^2/V·s]".format(mu*10**4, mu_error*10**4))
 
 plt.figure(2)
-plt.plot(B, U_H, label='Data')
-plt.plot(B, U_H_pred, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
+plt.plot(B*10**3, U_H*10**3, label='Data')
+plt.plot(B*10**3, U_H_pred*10**3, label=f'Linear Fit, $R^2$={R_squared:.3f}', linestyle = '--')
 plt.xlabel("$B$ [mT]")
 plt.ylabel("$U_H$ [mV]")
 plt.title("Hall Voltage vs. Magnetic Field")
@@ -238,13 +276,15 @@ y = np.log(U_p[T >= T_limit])
 
 res = linregress(x, y) # use linear regression
 X = res.slope #[K]
+X_error = res.stderr #[K]
+R_squared = res.rvalue**2
+y_pred = res.slope*x + res.intercept
+
 k_B = scipy.constants.k #[m^2·kg/s^2·K]
 E_g = 2*k_B*X #[J]
 E_g_eV = E_g * 6.241509e18 #[eV]
-print("\tThe energy gap of the semiconductor is {:.3f}[eV]".format(E_g_eV))
-
-R_squared = res.rvalue**2
-y_pred = res.slope*x + res.intercept
+E_g_eV_error = 2*k_B*X_error*6.241509e18 #[eV]
+print("\tThe energy gap of the semiconductor is {:.3f}±{:.3f}[eV]".format(E_g_eV, E_g_eV_error))
 
 plt.figure(4)
 plt.plot(1/T, 1/U_p)
@@ -275,13 +315,15 @@ y = np.log(U_H[T >= T_limit])
 
 res = linregress(x, y) # use linear regression
 X = res.slope #[K]
+X_error = res.stderr #[K]
+R_squared = res.rvalue**2
+y_pred = res.slope*x + res.intercept
+
 k_B = scipy.constants.k #[m^2·kg/s^2·K]
 E_g = 2*k_B*X #[J]
 E_g_eV = E_g * 6.241509e18 #[eV]
-print("\tThe energy gap of the semiconductor is {:.3f}[eV]".format(E_g_eV))
-
-R_squared = res.rvalue**2
-y_pred = res.slope*x + res.intercept
+E_g_eV_error = 2*k_B*X_error*6.241509e18 #[eV]
+print("\tThe energy gap of the semiconductor is {:.3f}±{:.3f}[eV]".format(E_g_eV, E_g_eV_error))
 
 plt.figure(6)
 plt.plot(1/T, np.log(U_H), label='Data')
