@@ -41,7 +41,6 @@ plt.plot(1020, plat_counts[104], marker='.', ms=10)
 plt.xlabel("Voltage [V]")
 plt.ylabel("Counts")
 plt.grid()
-#plt.show()
 
 #%% Part 2: Background Measurement & Statistics
 
@@ -90,7 +89,6 @@ plt.xlabel("Measurements")
 plt.ylabel("Counts")
 plt.legend()
 plt.grid()
-#plt.show()
 
 #%% Part 3: Inverse Squared Law
 
@@ -133,7 +131,6 @@ plt.xlabel("Distance [mm]")
 plt.ylabel("Counts Per Second")
 plt.legend()
 plt.grid()
-#plt.show()
 
 #%% Part 4: Alpha Decay
 
@@ -157,7 +154,6 @@ chi2 = Chi2(energy, 3.9)
 
 chi2_mean_range = Chi2(mean_range/10, 2.5)
 chi2_tot_range = Chi2(tot_range/10, 3.4)
-print(chi2_mean_range, chi2_tot_range)
 
 print(f"\tMean Range: {mean_range/10:0.3f}[cm], Total Range: {tot_range/10:0.3f}[cm], Energy: {energy:0.3f}[MeV]")
 
@@ -171,7 +167,6 @@ plt.xlabel("Distance [mm]")
 plt.ylabel("Relative Counts Per Second")
 plt.legend()
 plt.grid()
-#plt.show()
 
 #%% Part 5: Beta Decay
 
@@ -197,7 +192,6 @@ range = (np.log(R_b) - res.intercept)/(-mu)
 energy = np.exp(6.63 - 3.2376*np.sqrt(10.2146 - np.log(range)))
 
 chi2_energy_tl = Chi2(energy, 0.7)
-print(chi2_energy_tl*100)
 
 print(f"\tThallium - Mu: {mu:0.3f}[cm^2/mg], Range: {range:0.3f}[mg/cm^2], Energy: {energy:0.3f}[MeV]")
 
@@ -226,7 +220,7 @@ plt.ylabel("Counts Per Second")
 plt.legend()
 plt.grid()
 
-# Source 2: Strontium-
+# Source 2: Strontium-90
 beta_data_strontium = pd.read_csv(f'Data/beta_decay_strontium.csv', header=0, usecols=['Density [mg/cm^2]', 'Thickness [mm]', 'CPS'])
 thicknesses = beta_data_strontium['Thickness [mm]']
 densities = beta_data_strontium['Density [mg/cm^2]']
@@ -244,7 +238,6 @@ range = (np.log(R_b) - res.intercept)/(-mu)
 energy = np.exp(6.63 - 3.2376*np.sqrt(10.2146 - np.log(range)))
 
 chi2_energy_sr = Chi2(energy, 2.8)
-print(chi2_energy_sr*100)
 
 print(f"\tStrontium - Mu: {mu:0.3f}[cm^2/mg], Range: {range:0.3f}[mg/cm^2], Energy: {energy:0.3f}[MeV]")
 

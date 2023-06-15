@@ -178,7 +178,6 @@ b = reg.intercept
 plt.plot(X_Vec, a*X_Vec+b)
 #plt.show()
 
-
 print(a, b)
 
 #coin was ten shekels
@@ -229,7 +228,6 @@ plt.xlabel('Channels')
 plt.legend()
 plt.show()
 
-
 #%% Strontianit
 
 Ti_Data = pd.read_csv('strontianit_yurr.txt',sep='\t',header=1) # read the data.
@@ -275,6 +273,3 @@ plt.ylabel('Impulses')
 plt.xlabel('Channels')
 plt.legend()
 plt.show()
-
-
-
