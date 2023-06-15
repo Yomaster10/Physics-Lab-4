@@ -159,10 +159,6 @@ chi2_mean_range = Chi2(mean_range/10, 2.5)
 chi2_tot_range = Chi2(tot_range/10, 3.4)
 print(chi2_mean_range, chi2_tot_range)
 
-chi2_mean_range = Chi2(mean_range, 25)
-chi2_tot_range = Chi2(tot_range, 34)
-print(chi2_mean_range, chi2_tot_range)
-
 print(f"\tMean Range: {mean_range/10:0.3f}[cm], Total Range: {tot_range/10:0.3f}[cm], Energy: {energy:0.3f}[MeV]")
 
 plt.figure()
